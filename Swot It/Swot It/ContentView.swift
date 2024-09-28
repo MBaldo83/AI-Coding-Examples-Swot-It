@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab = 0
+    @EnvironmentObject var model: SwotItModel
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -31,7 +32,7 @@ struct ContentView: View {
 
 struct BuildView: View {
     @State private var topic: String = ""
-    @State private var numberOfCards: String = ""
+    @State private var numberOfCards: Int = 1
     
     var body: some View {
         VStack(spacing: 20) {
@@ -46,12 +47,14 @@ struct BuildView: View {
                     .border(Color.gray, width: 1)
             }
             
-            VStack(alignment: .leading, spacing: 5) {
+            HStack {
                 Text("Number of cards")
                     .font(.subheadline)
-                TextField("", text: $numberOfCards)
+                Spacer()
+                TextField("", value: $numberOfCards, formatter: NumberFormatter())
                     .keyboardType(.numberPad)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .frame(width: 100)
             }
             
             // Placeholder for card slots
@@ -73,15 +76,99 @@ struct BuildView: View {
                 
                 Button(action: {
                     // Implement go swoll functionality
-                    print("Going swoll!")
+                    print("Fetch questions")
                 }) {
-                    Text("Go swoll!")
+                    Text("Go Swot!")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
             }
         }
         .padding()
+    }
+}
+
+protocol APIClientProtocol {
+    func generateCards(topic: String, count: Int) async throws -> [Card]
+    func loadDecks() async throws -> [Deck]
+    // Add other API methods as needed
+}
+
+class APIClient: APIClientProtocol {
+    func generateCards(topic: String, count: Int) async throws -> [Card] {
+        // Return 2 hardcoded card models
+        return [
+            Card(front: "What is the capital of France?", back: "Paris"),
+            Card(front: "Who wrote 'Romeo and Juliet'?", back: "William Shakespeare")
+        ]
+    }
+    
+    func loadDecks() async throws -> [Deck] {
+        // Implement API call to load decks
+        // This might load from a backend or local storage
+        // Return 2 hardcoded decks with cards
+        return [
+            Deck(topic: "History", cards: [
+                Card(front: "Who was the first President of the United States?", back: "George Washington"),
+                Card(front: "In which year did World War II end?", back: "1945")
+            ]),
+            Deck(topic: "Science", cards: [
+                Card(front: "What is the chemical symbol for gold?", back: "Au"),
+                Card(front: "What is the largest planet in our solar system?", back: "Jupiter")
+            ])
+        ]
+    }
+}
+
+class SwotItModel: ObservableObject {
+    @Published var decks: [Deck] = []
+    @Published var currentDeck: Deck?
+    
+    private let apiClient: APIClientProtocol
+    
+    init(apiClient: APIClientProtocol) {
+        self.apiClient = apiClient
+    }
+    
+    func generateCards(for topic: String, count: Int) async throws {
+        let cards = try await apiClient.generateCards(topic: topic, count: count)
+        currentDeck = Deck(topic: topic, cards: cards)
+    }
+    
+    func saveDeck() {
+        if let deck = currentDeck {
+            decks.append(deck)
+            // Here you might also want to persist the deck to local storage or a backend
+        }
+    }
+    
+    func loadDecks() async throws {
+        // This could load from local storage or a backend
+        decks = try await apiClient.loadDecks()
+    }
+}
+
+struct Card: Identifiable, Codable {
+    let id: UUID
+    let front: String
+    let back: String
+    
+    init(id: UUID = UUID(), front: String, back: String) {
+        self.id = id
+        self.front = front
+        self.back = back
+    }
+}
+
+struct Deck: Identifiable, Codable {
+    let id: UUID
+    let topic: String
+    var cards: [Card]
+    
+    init(id: UUID = UUID(), topic: String, cards: [Card]) {
+        self.id = id
+        self.topic = topic
+        self.cards = cards
     }
 }
 
