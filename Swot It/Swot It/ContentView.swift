@@ -31,60 +31,104 @@ struct ContentView: View {
 }
 
 struct BuildView: View {
+    @EnvironmentObject private var model: SwotItModel
     @State private var topic: String = ""
     @State private var numberOfCards: Int = 1
+    @State private var scrollOffset: CGFloat = 0
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("What do you want to learn about?")
-                .font(.headline)
-            
-            VStack(alignment: .leading, spacing: 5) {
-                Text("Topic entry Multiple Lines")
-                    .font(.subheadline)
-                TextEditor(text: $topic)
-                    .frame(height: 100)
-                    .border(Color.gray, width: 1)
-            }
-            
-            HStack {
-                Text("Number of cards")
-                    .font(.subheadline)
-                Spacer()
-                TextField("", value: $numberOfCards, formatter: NumberFormatter())
-                    .keyboardType(.numberPad)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .frame(width: 100)
-            }
-            
-            // Placeholder for card slots
-            ForEach(0..<3) { _ in
-                RoundedRectangle(cornerRadius: 5)
-                    .stroke(Color.gray, lineWidth: 1)
-                    .frame(height: 50)
-            }
-            
-            HStack {
-                Button(action: {
-                    // Implement save functionality
-                    print("Saving: \(topic), Cards: \(numberOfCards)")
-                }) {
-                    Text("Save It")
-                        .frame(maxWidth: .infinity)
+        ScrollView {
+            VStack(spacing: 20) {
+                GeometryReader { geometry in
+                    Color.clear.preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .named("scroll")).origin.y)
                 }
-                .buttonStyle(.borderedProminent)
+                .frame(height: 0)
                 
-                Button(action: {
-                    // Implement go swoll functionality
-                    print("Fetch questions")
-                }) {
-                    Text("Go Swot!")
-                        .frame(maxWidth: .infinity)
+                VStack(spacing: 20) {
+                    Text("What do you want to study?")
+                        .font(.headline)
+                        .opacity(scrollOffset > -50 ? 1 : 0)
+                    
+                    TextEditor(text: $topic)
+                        .frame(height: 100)
+                        .border(Color.gray, width: 1)
+                        .opacity(scrollOffset > -100 ? 1 : 0)
                 }
-                .buttonStyle(.borderedProminent)
+                .animation(.easeInOut, value: scrollOffset)
+                
+                HStack {
+                    Text("Cards:")
+                        .font(.subheadline)
+                    TextField("", value: $numberOfCards, formatter: NumberFormatter())
+                        .keyboardType(.numberPad)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(width: 100)
+                    Spacer()
+                    Button("Generate Questions") {
+                        Task {
+                            do {
+                                try await model.generateCards(for: topic, count: numberOfCards)
+                            } catch {
+                                print("Error generating cards: \(error)")
+                            }
+                        }
+                    }
+                }
+                .background(Color.white)
+                .zIndex(1)
+                
+                if let currentDeck = model.currentDeck, !currentDeck.cards.isEmpty {
+                    ForEach(currentDeck.cards) { card in
+                            HStack(spacing: 8) {
+                                Text(card.front)
+                                    .font(.headline)
+                                
+                                DottedLine()
+                                    .frame(width: 1)
+                                    .padding(.vertical, 4)
+                                
+                                Text(card.back)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.vertical, 8)
+                        }
+                    .listStyle(PlainListStyle())
+                    .frame(height: 200)
+                } else {
+                    Text("No cards generated yet")
+                        .foregroundColor(.secondary)
+                        .padding()
+                }
+                
+                // ... rest of your view ...
             }
+            .padding()
         }
-        .padding()
+        .coordinateSpace(name: "scroll")
+        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+            scrollOffset = value
+        }
+    }
+}
+
+struct DottedLine: View {
+    var body: some View {
+        GeometryReader { geometry in
+            Path { path in
+                path.move(to: CGPoint(x: 0, y: 0))
+                path.addLine(to: CGPoint(x: 0, y: geometry.size.height))
+            }
+            .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
+            .foregroundColor(.gray)
+        }
+    }
+}
+
+struct ScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
@@ -99,7 +143,15 @@ class APIClient: APIClientProtocol {
         // Return 2 hardcoded card models
         return [
             Card(front: "What is the capital of France?", back: "Paris"),
-            Card(front: "Who wrote 'Romeo and Juliet'?", back: "William Shakespeare")
+            Card(front: "Who wrote 'Romeo and Juliet'?", back: "William Shakespeare"),
+            Card(front: "What is the largest ocean on Earth?", back: "Pacific Ocean"),
+            Card(front: "Who painted the Mona Lisa?", back: "Leonardo da Vinci"),
+            Card(front: "What is the chemical symbol for water?", back: "H2O"),
+            Card(front: "In which year did Christopher Columbus reach the Americas?", back: "1492"),
+            Card(front: "What is the largest planet in our solar system?", back: "Jupiter"),
+            Card(front: "Who developed the theory of relativity?", back: "Albert Einstein"),
+            Card(front: "What is the capital of Japan?", back: "Tokyo"),
+            Card(front: "Who wrote '1984'?", back: "George Orwell")
         ]
     }
     

@@ -16,3 +16,7 @@ Using images to describe UI
   * Result: summarised article
   * further prompts "given that approach, what Models would you recommend for this app where we want to generate a list of questions from a given topic, we then want to save that list of questions as a Deck, in another part of the applicaiton I want to be able to retrieve a list of decks"
     * Result: produced models
+4. Adding the model dependency to the View
+  * "I want BuildView to have access to SwotItModel, using the MV architecture pattern described here, how should BuildView access this model"
+5. Adding a dotted line
+  * "add a dotted line between the front and the back of the cards"
