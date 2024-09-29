@@ -35,89 +35,86 @@ struct BuildView: View {
     @State private var topic: String = ""
     @State private var numberOfCards: Int = 1
     @State private var scrollOffset: CGFloat = 0
-    let topVStackHeight: CGFloat = 170 // Adjust this value based on your actual VStack height
+    var topVStackHeight: CGFloat { headlineHeight + topicTextFieldHeight }
+    let headlineHeight: CGFloat = 20
+    let topicTextFieldHeight: CGFloat = 100
     
     var body: some View {
-        GeometryReader { outerGeometry in
-            ScrollView {
+        ScrollView {
+            VStack(spacing: 20) {
+                GeometryReader { geometry in
+                    Color.clear.preference(key: ViewOffsetKey.self, value: geometry.frame(in: .named("scroll")).origin.y)
+                }
+                .frame(height: 0)
+                
                 VStack(spacing: 20) {
-                    GeometryReader { geometry in
-                        Color.clear.preference(key: ViewOffsetKey.self, value: geometry.frame(in: .named("scroll")).origin.y)
-                    }
-                    .frame(height: 0)
+                    Text("What do you want to study?")
+                        .font(.headline)
+                        .frame(height: headlineHeight)
                     
-                    VStack(spacing: 20) {
-                        Text("What do you want to study?")
-                            .font(.headline)
-                        
-                        TextEditor(text: $topic)
-                            .frame(height: 100)
-                            .border(Color.gray, width: 1)
-                    }
-                    .animation(.easeInOut, value: scrollOffset)
-                    
-                    HStack {
-                        Text("Cards:")
-                            .font(.subheadline)
-                        TextField("", value: $numberOfCards, formatter: NumberFormatter())
-                            .keyboardType(.numberPad)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .frame(width: 100)
-                        Spacer()
-                        Button("Generate Questions") {
-                            Task {
-                                do {
-                                    try await model.generateCards(for: topic, count: numberOfCards)
-                                } catch {
-                                    print("Error generating cards: \(error)")
-                                }
-                            }
+                    TextEditor(text: $topic)
+                        .frame(height: topicTextFieldHeight)
+                        .border(Color.gray, width: 1)
+                }
+                
+                GenerateCardsToolbar(numberOfCards: $numberOfCards, topic: $topic) {
+                    Task {
+                        do {
+                            try await model.generateCards(for: topic, count: numberOfCards)
+                        } catch {
+                            print("Error generating cards: \(error)")
                         }
-                    }
-                    .background(Color.white)
-                    .zIndex(1)
-                    
-                    if let currentDeck = model.currentDeck, !currentDeck.cards.isEmpty {
-                        ForEach(currentDeck.cards) { card in
-                            HStack(spacing: 8) {
-                                Text(card.front)
-                                    .font(.headline)
-                                
-                                DottedLine()
-                                    .frame(width: 1)
-                                    .padding(.vertical, 4)
-                                
-                                Text(card.back)
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.vertical, 8)
-                        }
-                        .listStyle(PlainListStyle())
-                        .frame(height: 200)
-                    } else {
-                        Text("No cards generated yet")
-                            .foregroundColor(.secondary)
-                            .padding()
                     }
                 }
-                .padding()
+                
+                if let currentDeck = model.currentDeck, !currentDeck.cards.isEmpty {
+                    ForEach(currentDeck.cards) { card in
+                        HStack(spacing: 8) {
+                            Text(card.front)
+                                .font(.headline)
+                            
+                            DottedLine()
+                                .frame(width: 1)
+                                .padding(.vertical, 4)
+                            
+                            Text(card.back)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    .listStyle(PlainListStyle())
+                    .frame(height: 200)
+                } else {
+                    Text("No cards generated yet")
+                        .foregroundColor(.secondary)
+                        .padding()
+                }
             }
-            .coordinateSpace(name: "scroll")
-            .onPreferenceChange(ViewOffsetKey.self) { value in
-                scrollOffset = value
-                print("Scroll offset: \(scrollOffset)")
+            .padding()
+        }
+        .coordinateSpace(name: "scroll")
+        .onPreferenceChange(ViewOffsetKey.self) { value in
+            scrollOffset = value
+        }
+        .overlay(alignment: .top) {
+            GenerateCardsToolbar(numberOfCards: $numberOfCards, topic: $topic) {
+                Task {
+                    do {
+                        try await model.generateCards(for: topic, count: numberOfCards)
+                    } catch {
+                        print("Error generating cards: \(error)")
+                    }
+                }
             }
-            .overlay(
-                stickyHeader
-                    .opacity(opacity)
-                    .animation(.easeInOut, value: scrollOffset)
-                , alignment: .top
-            )
+            .opacity(overlayOpacity)
+            .animation(.easeInOut, value: scrollOffset)
+            .compositingGroup()
+            .shadow(radius: 5)
         }
     }
-
-    var opacity: Double {
+    
+    var overlayOpacity: Double {
         let fadeInThreshold = -topVStackHeight
         let fullyVisibleThreshold = fadeInThreshold - 50 // Adjust this value to control fade speed
         
@@ -128,30 +125,6 @@ struct BuildView: View {
         } else {
             return Double((fadeInThreshold - scrollOffset) / (fadeInThreshold - fullyVisibleThreshold))
         }
-    }
-    
-    var stickyHeader: some View {
-        HStack {
-            Text("Cards:")
-                .font(.subheadline)
-            TextField("", value: $numberOfCards, formatter: NumberFormatter())
-                .keyboardType(.numberPad)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .frame(width: 100)
-            Spacer()
-            Button("Generate Questions") {
-                Task {
-                    do {
-                        try await model.generateCards(for: topic, count: numberOfCards)
-                    } catch {
-                        print("Error generating cards: \(error)")
-                    }
-                }
-            }
-        }
-        .padding()
-        .background(Color.white)
-        .shadow(radius: 5)
     }
 }
 
@@ -175,13 +148,6 @@ struct ViewOffsetKey: PreferenceKey {
         value += nextValue()
     }
 }
-
-// struct ScrollOffsetPreferenceKey: PreferenceKey {
-//     static var defaultValue: CGFloat = 0
-//     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-//         value = nextValue()
-//     }
-// }
 
 protocol APIClientProtocol {
     func generateCards(topic: String, count: Int) async throws -> [Card]
@@ -286,6 +252,29 @@ struct DecksView: View {
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
+    }
+}
+
+struct GenerateCardsToolbar: View {
+    @Binding var numberOfCards: Int
+    @Binding var topic: String
+    var generateAction: () -> Void
+    
+    var body: some View {
+        HStack {
+            Text("Cards:")
+                .font(.subheadline)
+            TextField("", value: $numberOfCards, formatter: NumberFormatter())
+                .keyboardType(.numberPad)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .frame(width: 100)
+            Spacer()
+            Button("Generate Questions") {
+                generateAction()
+            }
+        }
+        .padding()
+        .background(Color.white)
     }
 }
 
