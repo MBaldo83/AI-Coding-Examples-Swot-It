@@ -35,50 +35,50 @@ struct BuildView: View {
     @State private var topic: String = ""
     @State private var numberOfCards: Int = 1
     @State private var scrollOffset: CGFloat = 0
+    let topVStackHeight: CGFloat = 170 // Adjust this value based on your actual VStack height
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                GeometryReader { geometry in
-                    Color.clear.preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .named("scroll")).origin.y)
-                }
-                .frame(height: 0)
-                
+        GeometryReader { outerGeometry in
+            ScrollView {
                 VStack(spacing: 20) {
-                    Text("What do you want to study?")
-                        .font(.headline)
-                        .opacity(scrollOffset > -50 ? 1 : 0)
+                    GeometryReader { geometry in
+                        Color.clear.preference(key: ViewOffsetKey.self, value: geometry.frame(in: .named("scroll")).origin.y)
+                    }
+                    .frame(height: 0)
                     
-                    TextEditor(text: $topic)
-                        .frame(height: 100)
-                        .border(Color.gray, width: 1)
-                        .opacity(scrollOffset > -100 ? 1 : 0)
-                }
-                .animation(.easeInOut, value: scrollOffset)
-                
-                HStack {
-                    Text("Cards:")
-                        .font(.subheadline)
-                    TextField("", value: $numberOfCards, formatter: NumberFormatter())
-                        .keyboardType(.numberPad)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .frame(width: 100)
-                    Spacer()
-                    Button("Generate Questions") {
-                        Task {
-                            do {
-                                try await model.generateCards(for: topic, count: numberOfCards)
-                            } catch {
-                                print("Error generating cards: \(error)")
+                    VStack(spacing: 20) {
+                        Text("What do you want to study?")
+                            .font(.headline)
+                        
+                        TextEditor(text: $topic)
+                            .frame(height: 100)
+                            .border(Color.gray, width: 1)
+                    }
+                    .animation(.easeInOut, value: scrollOffset)
+                    
+                    HStack {
+                        Text("Cards:")
+                            .font(.subheadline)
+                        TextField("", value: $numberOfCards, formatter: NumberFormatter())
+                            .keyboardType(.numberPad)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .frame(width: 100)
+                        Spacer()
+                        Button("Generate Questions") {
+                            Task {
+                                do {
+                                    try await model.generateCards(for: topic, count: numberOfCards)
+                                } catch {
+                                    print("Error generating cards: \(error)")
+                                }
                             }
                         }
                     }
-                }
-                .background(Color.white)
-                .zIndex(1)
-                
-                if let currentDeck = model.currentDeck, !currentDeck.cards.isEmpty {
-                    ForEach(currentDeck.cards) { card in
+                    .background(Color.white)
+                    .zIndex(1)
+                    
+                    if let currentDeck = model.currentDeck, !currentDeck.cards.isEmpty {
+                        ForEach(currentDeck.cards) { card in
                             HStack(spacing: 8) {
                                 Text(card.front)
                                     .font(.headline)
@@ -93,22 +93,65 @@ struct BuildView: View {
                             }
                             .padding(.vertical, 8)
                         }
-                    .listStyle(PlainListStyle())
-                    .frame(height: 200)
-                } else {
-                    Text("No cards generated yet")
-                        .foregroundColor(.secondary)
-                        .padding()
+                        .listStyle(PlainListStyle())
+                        .frame(height: 200)
+                    } else {
+                        Text("No cards generated yet")
+                            .foregroundColor(.secondary)
+                            .padding()
+                    }
                 }
-                
-                // ... rest of your view ...
+                .padding()
             }
-            .padding()
+            .coordinateSpace(name: "scroll")
+            .onPreferenceChange(ViewOffsetKey.self) { value in
+                scrollOffset = value
+                print("Scroll offset: \(scrollOffset)")
+            }
+            .overlay(
+                stickyHeader
+                    .opacity(opacity)
+                    .animation(.easeInOut, value: scrollOffset)
+                , alignment: .top
+            )
         }
-        .coordinateSpace(name: "scroll")
-        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-            scrollOffset = value
+    }
+
+    var opacity: Double {
+        let fadeInThreshold = -topVStackHeight
+        let fullyVisibleThreshold = fadeInThreshold - 50 // Adjust this value to control fade speed
+        
+        if scrollOffset > fadeInThreshold {
+            return 0
+        } else if scrollOffset < fullyVisibleThreshold {
+            return 1
+        } else {
+            return Double((fadeInThreshold - scrollOffset) / (fadeInThreshold - fullyVisibleThreshold))
         }
+    }
+    
+    var stickyHeader: some View {
+        HStack {
+            Text("Cards:")
+                .font(.subheadline)
+            TextField("", value: $numberOfCards, formatter: NumberFormatter())
+                .keyboardType(.numberPad)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .frame(width: 100)
+            Spacer()
+            Button("Generate Questions") {
+                Task {
+                    do {
+                        try await model.generateCards(for: topic, count: numberOfCards)
+                    } catch {
+                        print("Error generating cards: \(error)")
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color.white)
+        .shadow(radius: 5)
     }
 }
 
@@ -125,12 +168,20 @@ struct DottedLine: View {
     }
 }
 
-struct ScrollOffsetPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
+struct ViewOffsetKey: PreferenceKey {
+    typealias Value = CGFloat
+    static var defaultValue = CGFloat.zero
+    static func reduce(value: inout Value, nextValue: () -> Value) {
+        value += nextValue()
     }
 }
+
+// struct ScrollOffsetPreferenceKey: PreferenceKey {
+//     static var defaultValue: CGFloat = 0
+//     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+//         value = nextValue()
+//     }
+// }
 
 protocol APIClientProtocol {
     func generateCards(topic: String, count: Int) async throws -> [Card]
@@ -172,6 +223,7 @@ class APIClient: APIClientProtocol {
     }
 }
 
+@MainActor
 class SwotItModel: ObservableObject {
     @Published var decks: [Deck] = []
     @Published var currentDeck: Deck?

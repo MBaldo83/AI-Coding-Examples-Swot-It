@@ -18,5 +18,14 @@ Using images to describe UI
     * Result: produced models
 4. Adding the model dependency to the View
   * "I want BuildView to have access to SwotItModel, using the MV architecture pattern described here, how should BuildView access this model"
-5. Adding a dotted line
+5. Trying to add sticky scroll
+  * "When the user scrolls this list up, I want the elements above it to collapse so that only the HStack with Cards: remains how should I go about this?"
+  * "the value of scrollOffset is being set tto 0 when the view loads, but is never changed, so the functionality to collapse the VStack isn't working do you know why?"
+  * "the closure in onPreferenceChange is not being called"
+  * using the value of scrollOffset, I'd like this HStack to stick on screen above the scroll view when the user scrolls up
+  * when the scrollOffset is greater than the height of the top VStack, this overlay should fade in
+6. Adding a dotted line
   * "add a dotted line between the front and the back of the cards"
+7. Threading Fix
+  * Publishing changes from background threads is not allowed
+  * how can i ensure that all publishe changes are performed on the main thread?
