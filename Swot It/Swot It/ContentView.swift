@@ -33,7 +33,7 @@ struct ContentView: View {
 struct BuildView: View {
     @EnvironmentObject private var model: SwotItModel
     @State private var topic: String = ""
-    @State private var numberOfCards: Int = 1
+    @State private var numberOfCards: Int = 10
     @State private var scrollOffset: CGFloat = 0
     var topVStackHeight: CGFloat { headlineHeight + topicTextFieldHeight }
     let headlineHeight: CGFloat = 20
@@ -47,15 +47,7 @@ struct BuildView: View {
                 }
                 .frame(height: 0)
                 
-                VStack(spacing: 20) {
-                    Text("What do you want to study?")
-                        .font(.headline)
-                        .frame(height: headlineHeight)
-                    
-                    TextEditor(text: $topic)
-                        .frame(height: topicTextFieldHeight)
-                        .border(Color.gray, width: 1)
-                }
+                TopicInputView(topic: $topic, headlineHeight: headlineHeight, topicTextFieldHeight: topicTextFieldHeight)
                 
                 GenerateCardsToolbar(numberOfCards: $numberOfCards, topic: $topic) {
                     Task {
@@ -69,21 +61,9 @@ struct BuildView: View {
                 
                 if let currentDeck = model.currentDeck, !currentDeck.cards.isEmpty {
                     ForEach(currentDeck.cards) { card in
-                        HStack(spacing: 8) {
-                            Text(card.front)
-                                .font(.headline)
-                            
-                            DottedLine()
-                                .frame(width: 1)
-                                .padding(.vertical, 4)
-                            
-                            Text(card.back)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 8)
+                        CardInListView(card: card)
+                            .padding(.vertical, 8)
                     }
-                    .listStyle(PlainListStyle())
                     .frame(height: 200)
                 } else {
                     Text("No cards generated yet")
@@ -275,6 +255,47 @@ struct GenerateCardsToolbar: View {
         }
         .padding()
         .background(Color.white)
+    }
+}
+
+struct TopicInputView: View {
+    @Binding var topic: String
+    let headlineHeight: CGFloat
+    let topicTextFieldHeight: CGFloat
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("What do you want to study?")
+                .font(.headline)
+                .frame(height: headlineHeight)
+            
+            TextEditor(text: $topic)
+                .frame(height: topicTextFieldHeight)
+                .border(Color.gray, width: 1)
+        }
+    }
+}
+
+struct CardInListView: View {
+    let card: Card
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(card.front)
+                .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
+            
+            DottedLine()
+                .frame(width: 1)
+                .padding(.vertical, 4)
+            
+            Text(card.back)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
+        }
     }
 }
 
