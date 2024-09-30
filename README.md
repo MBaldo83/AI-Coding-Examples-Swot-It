@@ -33,3 +33,15 @@ Using images to describe UI
   * how would I ensure that the 2 text fields in this view are both of equal width exactly half of the horizontal space available?
   * is there a way in swiftui to ensure views are an equal width without geometry reader?
   * between using geometry reader and using layoutPriority to make views of equal width, please asses each option pros and cons for performance and flexibility
+9. Adjusting padding
+  * "In BuildDeckView and its subviews I want to use the default system padding as space between elements, please simplify these views to use that"
+  * "Actually I do want to add padding, but just the default size, please add back padding to all elements in the scrollView in the simplest possible way"
+  * "is it not possible to add padding to the scrollView only?" (this is the container view)
+  * Asked a question to double check understanding: "by adding .padding() to the scrollView should this be used by internal elements as well?"
+    * This was interpreted as a request for new changes
+10. Replacing text with system image
+  * "Instead of a button with text is there a good system image to represent the buttons functionality to Generate Questions?"
+11. Added border / shadow
+  * "please add an outer border and a shadow to contain all the elements of CardInListView"
+  * "Is there a way in swiftUI to add a RoundedRectangle to the card without adding it as an overlay? "
+  * "what are the pros and cons of adding a RoundedRectangle as a background versus an overlay?"

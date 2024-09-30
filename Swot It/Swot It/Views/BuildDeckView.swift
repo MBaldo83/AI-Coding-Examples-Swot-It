@@ -11,7 +11,7 @@ struct BuildDeckView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack {
                 GeometryReader { geometry in
                     Color.clear.preference(key: ViewOffsetKey.self, value: geometry.frame(in: .named("scroll")).origin.y)
                 }
@@ -32,13 +32,11 @@ struct BuildDeckView: View {
                 if let currentDeck = model.currentDeck, !currentDeck.cards.isEmpty {
                     ForEach(currentDeck.cards) { card in
                         CardInListView(card: card)
-                            .padding(.vertical, 8)
+                            .frame(height: 200)
                     }
-                    .frame(height: 200)
                 } else {
                     Text("No cards generated yet")
                         .foregroundColor(.secondary)
-                        .padding()
                 }
             }
             .padding()
@@ -100,8 +98,10 @@ struct GenerateCardsToolbar: View {
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .frame(width: 100)
             Spacer()
-            Button("Generate Questions") {
-                generateAction()
+            Button(action: generateAction) {
+                Image(systemName: "sparkles")
+                    .foregroundColor(.blue)
+                    .font(.title2)
             }
         }
         .padding()
@@ -115,7 +115,7 @@ struct TopicInputView: View {
     let topicTextFieldHeight: CGFloat
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack {
             Text("What do you want to study?")
                 .font(.headline)
                 .frame(height: headlineHeight)
@@ -124,5 +124,12 @@ struct TopicInputView: View {
                 .frame(height: topicTextFieldHeight)
                 .border(Color.gray, width: 1)
         }
+    }
+}
+
+struct BuildDeckView_Previews: PreviewProvider {
+    static var previews: some View {
+        BuildDeckView()
+            .environmentObject(SwotItModel(apiClient: APIClient()))
     }
 }

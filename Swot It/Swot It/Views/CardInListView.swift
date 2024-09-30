@@ -20,6 +20,12 @@ struct CardInListView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .layoutPriority(1)
         }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.white)
+        )
+        .shadow(color: Color.gray.opacity(0.2), radius: 5, x: 0, y: 2)
     }
 }
 
@@ -33,5 +39,18 @@ struct DottedLine: View {
             .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
             .foregroundColor(.gray)
         }
+    }
+}
+
+// Add this preview struct
+struct CardInListView_Previews: PreviewProvider {
+    static var previews: some View {
+        CardInListView(
+            card: Card(
+                front: "What is the capital of France?",
+                back: "Paris"
+            )
+        )
+        .frame(height: 200)
     }
 }
