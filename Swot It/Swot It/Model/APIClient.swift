@@ -8,6 +8,15 @@ protocol APIClientProtocol {
 
 class APIClient: APIClientProtocol {
     func generateCards(topic: String, count: Int) async throws -> [Card] {
+
+        guard let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
+              let dict = NSDictionary(contentsOfFile: path) as? [String: Any],
+              let apiKey = dict["OPEN_API_KEY"] as? String else {
+            throw NSError(domain: "APIClientError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to load API key from Secrets.plist"])
+        }
+        
+        print("API Key loaded successfully: \(apiKey)")
+
         // Return 2 hardcoded card models
         return [
             Card(front: "What is the capital of France?", back: "Paris"),
