@@ -29,3 +29,7 @@ Using images to describe UI
 7. Threading Fix
   * Publishing changes from background threads is not allowed
   * how can i ensure that all publishe changes are performed on the main thread?
+8. Making the cards equal width
+  * how would I ensure that the 2 text fields in this view are both of equal width exactly half of the horizontal space available?
+  * is there a way in swiftui to ensure views are an equal width without geometry reader?
+  * between using geometry reader and using layoutPriority to make views of equal width, please asses each option pros and cons for performance and flexibility
