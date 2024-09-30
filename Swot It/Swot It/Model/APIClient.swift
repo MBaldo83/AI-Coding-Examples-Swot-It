@@ -3,7 +3,7 @@ import Foundation
 protocol APIClientProtocol {
     func generateCards(topic: String, count: Int) async throws -> [Card]
     func loadDecks() async throws -> [Deck]
-    // Add other API methods as needed
+    func saveDeck(_ deck: Deck) async throws
 }
 
 class APIClient: APIClientProtocol {
@@ -37,5 +37,17 @@ class APIClient: APIClientProtocol {
                 Card(front: "What is the largest planet in our solar system?", back: "Jupiter")
             ])
         ]
+    }
+    
+    func saveDeck(_ deck: Deck) async throws {
+        // Implement the API call to save the deck
+        // This is a placeholder implementation
+        print("Saving deck: \(deck.topic) with \(deck.cards.count) cards")
+        
+        // Simulate a network delay
+        try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second delay
+        
+        // In a real implementation, you would send the deck data to your backend
+        // and handle any potential errors
     }
 }

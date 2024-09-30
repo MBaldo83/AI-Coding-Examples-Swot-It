@@ -16,10 +16,12 @@ class SwotItModel: ObservableObject {
         currentDeck = Deck(topic: topic, cards: cards)
     }
     
-    func saveDeck() {
+    func saveDeck() async throws {
         if let deck = currentDeck {
+            try await apiClient.saveDeck(deck)
             decks.append(deck)
-            // Here you might also want to persist the deck to local storage or a backend
+            // Optionally, you might want to reset the currentDeck after saving
+            // currentDeck = nil
         }
     }
     
