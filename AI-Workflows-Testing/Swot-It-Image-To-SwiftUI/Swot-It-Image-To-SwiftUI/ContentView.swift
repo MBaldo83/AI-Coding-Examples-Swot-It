@@ -7,46 +7,78 @@
 
 import SwiftUI
 
-
 struct ContentView: View {
-    @State private var topic: String = "The Roman republic 49 BC"
-    @State private var numberOfCards: String = "10"
+    var body: some View {
+        TabView {
+            BuildView()
+                .tabItem {
+                    Label("Build", systemImage: "hammer")
+                }
+            DecksView()
+                .tabItem {
+                    Label("Decks", systemImage: "tray.full")
+                }
+        }
+    }
+}
+
+struct BuildView: View {
+    @State private var topic: String = ""
+    @State private var numberOfCards: String = ""
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("What do you want to learn about?")
-                .font(.headline)
-            
-            TextField("Topic", text: $topic)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding(.horizontal)
-            
-            HStack {
-                Text("number of cards:")
-                TextField("Number of cards", text: $numberOfCards)
+        VStack {
+            // Sticky Header
+            VStack {
+                Text("What do you want to learn about?")
+                    .font(.headline)
+                TextField("Topic entry", text: $topic)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .frame(width: 50)
-                Button(action: {
-                    // Action for the Go button
-                }) {
-                    Text("Go")
-                        .padding(.horizontal)
-                        .padding(.vertical, 5)
-                        .background(Color.green)
-                        .foregroundColor(.white)
-                        .cornerRadius(5)
+                    .padding(.bottom, 10)
+                HStack {
+                    Text("Number of cards:")
+                    TextField("", text: $numberOfCards)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(width: 50)
+                    Button(action: {
+                        // Action for Go button
+                    }) {
+                        Text("Go")
+                            .padding(.horizontal)
+                            .padding(.vertical, 5)
+                            .background(Color.green)
+                            .foregroundColor(.white)
+                            .cornerRadius(5)
+                    }
                 }
             }
+            .padding()
+            .background(Color(UIColor.systemGray6))
+            .cornerRadius(10)
             .padding(.horizontal)
             
-            ForEach(0..<3) { _ in
-                Rectangle()
-                    .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
-                    .frame(height: 50)
-                    .padding(.horizontal)
+            // Vertical Scrolling List of Cards
+            ScrollView {
+                VStack(spacing: 10) {
+                    ForEach(0..<4) { _ in
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(UIColor.systemGray5))
+                            .frame(height: 100)
+                            .overlay(
+                                Text("Card")
+                                    .foregroundColor(.black)
+                            )
+                    }
+                }
+                .padding()
             }
         }
-        .padding()
+    }
+}
+
+struct DecksView: View {
+    var body: some View {
+        Text("Decks View")
     }
 }
 
