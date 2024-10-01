@@ -11,7 +11,7 @@ import SwiftUI
 struct Swot_It_Prompt_And_RefineApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView() // Changed from ContentView to BuilderView
         }
     }
 }
