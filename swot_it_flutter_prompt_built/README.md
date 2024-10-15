@@ -43,5 +43,7 @@ API Definition:
 * The implementation of this method should return a hard coded list of Card Models tha can be displayed by the View
 ```
 
+```
 Update _BuilderViewState to include an array of CardModels
 This should start empty, and should be populated by the async call to generate cards made to the model when the generate cards button is pressed
+```
